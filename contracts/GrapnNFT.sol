@@ -4,9 +4,10 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 //Is used for safeTransferFrom. To check if recipient address can handle ERC721 tokens
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
 
 //Making my own ERC721.sol file, by working backwards from using the IERC721.sol file
-contract GraphNFT is IERC721, Ownable {
+contract GraphNFT is IERC721, Ownable, ERC165 {
 	mapping(address => uint256) ownerNFTokenCount;
 	mapping(uint256 => address) ownerOfToken;
 	mapping(uint256 => address) approvalForToken;
@@ -14,6 +15,14 @@ contract GraphNFT is IERC721, Ownable {
 	//owner => operator1 => true/false
 	//owner => operator2 => true/false
 	mapping(address => mapping(address => bool)) operatorApprovals;
+
+	//Checks to see if the our current NFT follows the ERC721 standard function calls
+	//This is based from an old method, it looks to have changed recently
+	mapping(bytes4 => bool) interfaceIds;
+
+	constructor() public {
+		interfaceIds[0x80ac58cd] = true;
+	}
 
 	modifier onlyTokenOwner(uint _tokenId) public {
 		require(ownerOfToken[_tokenId] == msg.sender);
@@ -84,5 +93,9 @@ contract GraphNFT is IERC721, Ownable {
 		uint256 size;
 		assembly {size := extcodesize(_newOwner) }
 		return (size > 0);
+	}
+
+	function supportsInterface(bytes4 interfaceID) external view returns (bool) {
+		return interfaceIds[interfaceID];
 	}
 }
